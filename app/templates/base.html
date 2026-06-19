@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Trainer{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+    a { color: #7eb8f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .nav { background: #1a1a1a; border-bottom: 1px solid #2a2a2a; padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; }
+    .nav-title { font-weight: 700; font-size: 1.1rem; color: #fff; }
+    .nav-link { color: #999; font-size: 0.9rem; }
+    .nav-link:hover { color: #e0e0e0; text-decoration: none; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-header { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 1rem; }
+
+    .badge { display: inline-block; padding: 0.2em 0.6em; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-push { background: #2a1f3d; color: #b39ddb; }
+    .badge-pull { background: #1f2d3d; color: #90caf9; }
+    .badge-legs { background: #1f3d2a; color: #a5d6a7; }
+    .badge-rest { background: #2a2a2a; color: #666; }
+    .badge-preserve { background: #2d1f1f; color: #ef9a9a; }
+    .badge-build { background: #1f2d1f; color: #a5d6a7; }
+    .badge-draft { background: #2a2a1f; color: #fff176; }
+    .badge-approved { background: #1f2d1f; color: #a5d6a7; }
+
+    .btn { display: inline-block; padding: 0.5rem 1.25rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #4a90d9; color: #fff; }
+    .btn-success { background: #388e3c; color: #fff; }
+    .btn-danger { background: #c62828; color: #fff; }
+    .btn-ghost { background: transparent; color: #999; border: 1px solid #333; }
+
+    .exercise-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .exercise-table th { text-align: left; color: #666; font-weight: 500; padding: 0.4rem 0.5rem; border-bottom: 1px solid #2a2a2a; }
+    .exercise-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid #1e1e1e; }
+    .exercise-name { font-weight: 600; color: #e0e0e0; }
+    .slot-label { font-size: 0.75rem; color: #555; }
+
+    .diff-up { color: #81c784; }
+    .diff-down { color: #e57373; }
+    .diff-hold { color: #888; }
+
+    .trainer-notes { background: #141e14; border-left: 3px solid #388e3c; padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; color: #c8e6c9; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .chat-log { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; max-height: 400px; overflow-y: auto; }
+    .chat-msg { padding: 0.6rem 0.9rem; border-radius: 6px; font-size: 0.88rem; line-height: 1.5; max-width: 85%; }
+    .chat-msg-user { background: #1e2a3a; color: #cce5ff; align-self: flex-end; }
+    .chat-msg-assistant { background: #1e2a1e; color: #d4edda; align-self: flex-start; }
+
+    .chat-form { display: flex; gap: 0.5rem; }
+    .chat-input { flex: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; padding: 0.6rem 0.9rem; font-size: 0.9rem; }
+    .chat-input:focus { outline: none; border-color: #4a90d9; }
+
+    .week-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.85rem; color: #888; margin-bottom: 0.4rem; }
+    .form-input, .form-select { width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: #4a90d9; }
+    .form-textarea { width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; padding: 0.5rem 0.75rem; font-size: 0.9rem; resize: vertical; min-height: 80px; }
+    .form-textarea:focus { outline: none; border-color: #4a90d9; }
+
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #555; border-top-color: #4a90d9; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #ccc; }
+    .meta-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .meta-item { font-size: 0.85rem; color: #666; }
+    .meta-item strong { color: #aaa; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="nav-title">AI Trainer</span>
+    <a href="/" class="nav-link">Home</a>
+    <a href="/weight" class="nav-link">Weight</a>
+    <a href="/setup" class="nav-link">Setup</a>
+  </nav>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

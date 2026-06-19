@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Week {{ plan.week_number }} Plan{% endblock %}
+{% block content %}
+
+{# Build last-week load map for diff display #}
+{% if prev_plan is defined and prev_plan %}
+  {% set prev_loads = namespace(map={}) %}
+  {% for day in prev_plan.plan_json.days %}
+    {% for ex in day.exercises %}
+      {% if ex.sets %}
+        {# store as "name": load #}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+
+<div class="meta-row">
+  <span class="badge badge-{{ plan.status }}">{{ plan.status }}</span>
+  <span class="meta-item">Week {{ plan.week_number }}</span>
+  <span class="meta-item">{{ plan.plan_json.start_date }}</span>
+  <span class="badge badge-{{ plan.plan_json.goal }}">{{ plan.plan_json.goal }}</span>
+  <a href="/" style="margin-left:auto;" class="btn btn-ghost" style="font-size:0.8rem;">← Home</a>
+</div>
+
+{% if plan.trainer_notes %}
+<div class="trainer-notes">{{ plan.trainer_notes }}</div>
+{% endif %}
+
+{# Week grid #}
+<div class="week-grid" id="plan-grid">
+{% for day in plan.plan_json.days %}
+<div class="card">
+  <div class="card-header">
+    {{ day.day_of_week | capitalize }}
+    <span class="badge badge-{{ day.type }}" style="margin-left:0.5rem;">{{ day.type }}</span>
+  </div>
+
+  {% if day.type == "rest" %}
+    <p style="color:#555;font-size:0.85rem;">Rest day</p>
+  {% else %}
+    <table class="exercise-table">
+      <thead>
+        <tr>
+          <th>Exercise</th>
+          <th>Sets × Reps</th>
+          <th>Load</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for ex in day.exercises %}
+        <tr>
+          <td>
+            <div class="exercise-name">{{ ex.name }}</div>
+            <div class="slot-label">{{ ex.slot }}</div>
+          </td>
+          <td>{{ ex.sets | length }} × {{ ex.sets[0].reps if ex.sets else "—" }}</td>
+          <td>
+            {% if ex.sets and ex.sets[0].load_lbs > 0 %}
+              {{ ex.sets[0].load_lbs }} lbs
+            {% else %}
+              <span style="color:#555">TBD</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if ex._progression is defined %}
+              {% if ex._progression.action == "progress" %}
+                <span class="diff-up" title="{{ ex._progression.reason }}">▲</span>
+              {% elif ex._progression.action in ("deload", "stall_deload") %}
+                <span class="diff-down" title="{{ ex._progression.reason }}">▼</span>
+              {% else %}
+                <span class="diff-hold" title="{{ ex._progression.reason }}">—</span>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endfor %}
+</div>
+
+{# Chat + approve panel #}
+{% if plan.status == "draft" %}
+<div style="margin-top:2rem; display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;">
+
+  <div class="card">
+    <div class="card-header">Edit via chat</div>
+    <div class="chat-log" id="chat-log">
+      {% for msg in messages %}
+        <div class="chat-msg chat-msg-{{ msg.role }}">{{ msg.content }}</div>
+      {% endfor %}
+    </div>
+    <form
+      hx-post="/plan/{{ plan.id }}/chat"
+      hx-target="body"
+      hx-swap="outerHTML"
+      class="chat-form"
+      id="chat-form"
+    >
+      <input
+        name="message"
+        class="chat-input"
+        placeholder="swap barbell rows — shoulder's cranky…"
+        autocomplete="off"
+        id="chat-input"
+      />
+      <button type="submit" class="btn btn-primary" id="send-btn">
+        <span id="send-label">Send</span>
+        <span class="htmx-indicator" style="margin-left:0.3rem;"><span class="spinner"></span></span>
+      </button>
+    </form>
+    <script>
+      document.getElementById('chat-form').addEventListener('submit', function() {
+        var btn = document.getElementById('send-btn');
+        var label = document.getElementById('send-label');
+        btn.disabled = true;
+        label.textContent = 'Sending…';
+      });
+    </script>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Approve & push to Hevy</div>
+    <p style="color:#888; font-size:0.85rem; margin-bottom:1rem;">
+      Review the plan above. Once approved, it will be pushed to Hevy as a routine.
+      This cannot be undone.
+    </p>
+    <form method="post" action="/plan/{{ plan.id }}/approve"
+          onsubmit="return confirm('Push this plan to Hevy?')">
+      <button type="submit" class="btn btn-success">Approve & Push to Hevy</button>
+    </form>
+  </div>
+
+</div>
+{% else %}
+<div class="card" style="margin-top:1.5rem;">
+  <p style="color:#81c784;">Plan approved and pushed to Hevy on {{ plan.approved_at }}.</p>
+</div>
+{% endif %}
+
+{% endblock %}

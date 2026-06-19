@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Body Weight — AI Trainer{% endblock %}
+{% block content %}
+
+<div class="section-title">Body Weight</div>
+
+{% if chart_data.labels %}
+<div class="card" style="padding: 1.5rem;">
+  <canvas id="weightChart" height="120"></canvas>
+</div>
+
+<div class="card">
+  <div class="card-header">Recent Entries</div>
+  <table class="exercise-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Weight (lbs)</th>
+        <th>7-Day Avg</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set labels = chart_data.labels %}
+      {% set weights = chart_data.weights %}
+      {% set rolling = chart_data.rolling %}
+      {% for i in range([labels|length, 14]|min) %}
+        {% set idx = labels|length - 1 - i %}
+        <tr>
+          <td>{{ labels[idx] }}</td>
+          <td>{{ weights[idx] }}</td>
+          <td style="color:#888;">{{ rolling[idx] }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const data = {{ chart_data | tojson }};
+
+  const ctx = document.getElementById('weightChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Daily Weight (lbs)',
+          data: data.weights,
+          borderColor: 'rgba(74, 144, 217, 0.5)',
+          backgroundColor: 'rgba(74, 144, 217, 0.08)',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 1.5,
+          tension: 0,
+          fill: false,
+        },
+        {
+          label: '7-Day Avg (lbs)',
+          data: data.rolling,
+          borderColor: '#81c784',
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderWidth: 2.5,
+          tension: 0.3,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#aaa', font: { size: 12 } }
+        },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: '#333',
+          borderWidth: 1,
+          titleColor: '#ccc',
+          bodyColor: '#aaa',
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#666',
+            maxTicksLimit: 12,
+            maxRotation: 45,
+          },
+          grid: { color: '#1e1e1e' },
+        },
+        y: {
+          ticks: { color: '#666' },
+          grid: { color: '#1e1e1e' },
+          title: { display: true, text: 'lbs', color: '#555' },
+        },
+      },
+    },
+  });
+</script>
+
+{% else %}
+<div class="card">
+  <p style="color:#888;">No body weight entries found in Hevy. Log your weight in the Hevy app and come back.</p>
+</div>
+{% endif %}
+
+{% endblock %}

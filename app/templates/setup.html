@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Setup{% endblock %}
+{% block content %}
+
+<div class="section-title">Program Setup</div>
+
+<div class="card" style="max-width:480px;">
+  <form method="post" action="/setup">
+    <div class="form-group">
+      <label class="form-label">Goal</label>
+      <select name="goal" class="form-select">
+        <option value="preserve" {% if state and state.goal == "preserve" %}selected{% endif %}>Preserve muscle (cut)</option>
+        <option value="build" {% if state and state.goal == "build" %}selected{% endif %}>Build muscle (bulk / maintenance)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Training days per week</label>
+      <select name="training_days" class="form-select">
+        {% for n in [3, 4, 5, 6] %}
+        <option value="{{ n }}" {% if state and state.training_days_per_week == n %}selected{% endif %}>{{ n }} days</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</div>
+
+<div class="card" style="max-width:480px; margin-top:1rem;">
+  <div class="card-header">Cold Start — Seed from Hevy</div>
+  <p style="color:#888; font-size:0.85rem; margin-bottom:1rem;">
+    Pull your recent Hevy history to seed working loads. Run this once before your first generated week.
+  </p>
+  <form method="post" action="/cold-start">
+    <button type="submit" class="btn btn-ghost">Seed from Hevy history</button>
+  </form>
+  {% if seeded is not none %}
+  <p style="margin-top:0.75rem; color:#81c784; font-size:0.85rem;">
+    Seeded {{ seeded }} workout records.
+    {% if classified is not none %}
+    Classified {{ classified }} new exercise templates into slots.
+    {% if unclassified %}<span style="color:#888"> ({{ unclassified }} unclassified — cardio / machines not in PPL scope)</span>{% endif %}
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
+
+{% endblock %}

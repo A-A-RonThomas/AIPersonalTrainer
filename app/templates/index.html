@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}AI Trainer — Home{% endblock %}
+{% block content %}
+
+{% if not state %}
+<div class="card">
+  <p style="color:#888; margin-bottom:1rem;">No program configured yet.</p>
+  <a href="/setup" class="btn btn-primary">Set Up Program</a>
+</div>
+{% else %}
+<div class="meta-row">
+  <div class="meta-item">Goal: <strong><span class="badge badge-{{ state.goal }}">{{ state.goal }}</span></strong></div>
+  <div class="meta-item">Training days: <strong>{{ state.training_days_per_week }}/week</strong></div>
+  <div class="meta-item">Week: <strong>{{ state.current_week }}</strong></div>
+  {% if state.is_cold_start %}<span class="badge badge-draft">calibration</span>{% endif %}
+</div>
+
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-header">Generate This Week</div>
+  <form method="post" action="/generate" id="gen-form">
+    <div class="form-group">
+      <label class="form-label">Notes / overrides (optional)</label>
+      <textarea name="notes" class="form-textarea" placeholder="e.g. left shoulder still cranky, skip incline this week / only 4 days available"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      Generate Week {{ state.current_week }}
+      <span class="htmx-indicator"><span class="spinner"></span></span>
+    </button>
+  </form>
+</div>
+
+{% if plan %}
+<div class="section-title">Latest Plan</div>
+<div class="card">
+  <div class="meta-row">
+    <span class="badge badge-{{ plan.status }}">{{ plan.status }}</span>
+    <span class="meta-item">Week {{ plan.week_number }}</span>
+    <span class="meta-item">{{ plan.start_date }}</span>
+    <span class="badge badge-{{ plan.goal }}">{{ plan.goal }}</span>
+  </div>
+  <a href="/plan/{{ plan.id }}" class="btn btn-ghost" style="margin-top:0.5rem;">View & Edit →</a>
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}
