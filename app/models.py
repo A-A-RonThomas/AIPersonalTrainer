@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -56,6 +56,15 @@ class ExerciseTemplate(Base):
     primary_muscle: Mapped[str | None] = mapped_column(String(100))
     secondary_muscles: Mapped[list] = mapped_column(JSONB, default=list)
     category: Mapped[str | None] = mapped_column(String(100))
+
+
+class BodyWeight(Base):
+    __tablename__ = "body_weight"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date: Mapped[date] = mapped_column(Date, unique=True)
+    weight_lbs: Mapped[float] = mapped_column(Float, nullable=False)
+    logged_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class ExerciseHistory(Base):

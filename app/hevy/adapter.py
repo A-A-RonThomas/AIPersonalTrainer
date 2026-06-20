@@ -82,18 +82,15 @@ class HevyClient:
     # Body measurements                                                    #
     # ------------------------------------------------------------------ #
 
-    def get_body_measurements(self, page: int = 1, page_size: int = 10) -> dict:
-        return self._get("/body_measurements", {"page": page, "pageSize": page_size})
-
     def get_all_body_measurements(self) -> list[dict]:
-        """Fetch all body measurements, paginating until done."""
+        """Fetch all body measurements from Hevy, paginating until done."""
         entries = []
         page = 1
         while True:
-            data = self.get_body_measurements(page=page, page_size=10)
+            data = self._get("/body_measurements", {"page": page, "pageSize": 10})
             batch = data.get("body_measurements", [])
             entries.extend(batch)
-            if len(batch) < 10:
+            if page >= data.get("page_count", 1):
                 break
             page += 1
         return entries
